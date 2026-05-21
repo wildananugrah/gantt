@@ -13,7 +13,6 @@ import { GridLayer } from './GridLayer';
 import { TodayLine } from './TodayLine';
 import { GanttBar } from './GanttBar';
 import { ArrowsLayer } from './ArrowsLayer';
-import { useBarDrag } from './useBarDrag';
 import { useRowDrag, reorderArray } from './useRowDrag';
 
 export type GanttControl = { scrollToToday: () => void };
@@ -75,32 +74,6 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
     el.addEventListener('scroll', onScroll, { passive: true });
     return () => el.removeEventListener('scroll', onScroll);
   }, [range, dayWidth]);
-
-  const updateTask = useMutation({
-    mutationFn: (v: { id: string; title: string; startDate: string; endDate: string }) =>
-      api.patch(`/tasks/${v.id}`, { startDate: v.startDate, endDate: v.endDate }),
-    onMutate: async (v) => {
-      await qc.cancelQueries({ queryKey: ['tasks', projectId] });
-      const prev = qc.getQueryData<{ tasks: Task[]; dependencies: Dependency[] }>(['tasks', projectId]);
-      if (prev) {
-        qc.setQueryData(['tasks', projectId], {
-          ...prev,
-          tasks: prev.tasks.map((t) => t.id === v.id ? { ...t, startDate: v.startDate, endDate: v.endDate } : t),
-        });
-      }
-      return { prev };
-    },
-    onSuccess: (_d, v) => {
-      toast.success(`Updated "${v.title}" → ${v.startDate} – ${v.endDate}`);
-    },
-    onError: (e: any, _v, ctx: any) => {
-      if (ctx?.prev) qc.setQueryData(['tasks', projectId], ctx.prev);
-      toast.error(`Couldn't update dates: ${e.message ?? 'unknown error'}`);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ['tasks', projectId] });
-    },
-  });
 
   const reorder = useMutation({
     mutationFn: (taskIds: string[]) =>
@@ -211,7 +184,7 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
             {sortedTasks.map((t, i) => {
               const pic = members.find((m) => m.id === t.picUserId);
               return (
-                <BarWithDrag
+                <GanttBar
                   key={t.id}
                   task={t}
                   pic={pic}
@@ -221,7 +194,6 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
                   height={ROW_HEIGHT}
                   selected={selectedId === t.id}
                   onSelect={() => nav({ to: '.', search: { task: t.id }, replace: true })}
-                  onCommit={(start, end) => updateTask.mutate({ id: t.id, title: t.title, startDate: start, endDate: end })}
                 />
               );
             })}
@@ -231,37 +203,3 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
     </div>
   );
 });
-
-function BarWithDrag(props: {
-  task: Task; pic?: User; rangeStart: string; dayWidth: number; top: number; height: number;
-  selected: boolean; onSelect: () => void; onCommit: (s: string, e: string) => void;
-}) {
-  const drag = useBarDrag({
-    dayWidth: props.dayWidth,
-    onCommit: props.onCommit,
-    onSelect: props.onSelect,
-  });
-  return (
-    <GanttBar
-      task={props.task}
-      pic={props.pic}
-      rangeStart={props.rangeStart}
-      dayWidth={props.dayWidth}
-      top={props.top}
-      height={props.height}
-      selected={props.selected}
-      onPointerDown={(e) => {
-        const initial = { startDate: props.task.startDate, endDate: props.task.endDate };
-        drag.onPointerDown(e, initial);
-        const el = e.currentTarget;
-        const move = drag.onPointerMove;
-        const up = (ev: PointerEvent) => {
-          drag.onPointerUp(ev);
-          el.removeEventListener('pointermove', move);
-        };
-        el.addEventListener('pointermove', move);
-        el.addEventListener('pointerup', up, { once: true });
-      }}
-    />
-  );
-}
