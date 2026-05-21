@@ -7,6 +7,7 @@ const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD');
 
 export const Task = z.object({
   id: z.string().uuid(),
+  ticketNumber: z.string().regex(/^[a-z0-9]{10}$/),
   projectId: z.string().uuid(),
   title: z.string(),
   description: z.string().nullable(),

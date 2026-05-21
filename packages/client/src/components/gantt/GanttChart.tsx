@@ -148,7 +148,10 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
               style={{ height: ROW_HEIGHT }}
             >
               <span className="text-muted text-[11px] flex-shrink-0">⋮⋮</span>
-              <span className="text-[13px] truncate flex-1">{t.title}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13px] truncate leading-tight">{t.title}</div>
+                <div className="text-[9px] font-mono text-muted tracking-wider uppercase leading-none">{t.ticketNumber}</div>
+              </div>
               {pic && (
                 <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-paper text-ink border border-rule text-[9px] font-semibold">
                   {pic.name.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()}

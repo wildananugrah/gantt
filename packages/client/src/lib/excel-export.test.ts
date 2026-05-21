@@ -28,7 +28,7 @@ const member: User = {
 const tasks: Task[] = [
   {
     id: '00000000-0000-0000-0000-000000000001',
-    projectId: 'p',
+    ticketNumber: 'abc1234567', projectId: 'p',
     title: 'Design',
     description: null, startDate: '2026-05-20', endDate: '2026-05-22',
     status: 'in_progress', picUserId: member.id, sortOrder: 0,
@@ -36,7 +36,7 @@ const tasks: Task[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000002',
-    projectId: 'p',
+    ticketNumber: 'abc1234567', projectId: 'p',
     title: 'Build',
     description: null, startDate: '2026-05-23', endDate: '2026-05-30',
     status: 'todo', picUserId: null, sortOrder: 1,
@@ -44,7 +44,7 @@ const tasks: Task[] = [
   },
   {
     id: '00000000-0000-0000-0000-000000000003',
-    projectId: 'p',
+    ticketNumber: 'abc1234567', projectId: 'p',
     title: 'Launch',
     description: null, startDate: '2026-05-29', endDate: '2026-05-31',
     status: 'done', picUserId: null, sortOrder: 2,

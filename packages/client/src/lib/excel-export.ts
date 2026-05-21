@@ -63,7 +63,7 @@ function bucketIndexForDate(buckets: Bucket[], iso: string, zoom: Zoom): number 
   return (d.getUTCFullYear() - first.getUTCFullYear()) * 12 + (d.getUTCMonth() - first.getUTCMonth());
 }
 
-const FIXED_HEADERS = ['Task', 'PIC', 'Start', 'End', 'Days', 'Status'];
+const FIXED_HEADERS = ['Ticket', 'Task', 'PIC', 'Start', 'End', 'Days', 'Status'];
 
 type StatusStyle = {
   fill: string;       // ARGB
@@ -164,7 +164,7 @@ export async function exportGanttToExcel(args: {
   });
 
   // ---- Column widths ----
-  const fixedWidths = [32, 18, 12, 12, 6, 14];
+  const fixedWidths = [13, 32, 18, 12, 12, 6, 14];
   fixedWidths.forEach((w, idx) => { ws.getColumn(idx + 1).width = w; });
   const cellWidth = zoom === 'day' ? 3 : zoom === 'week' ? 6 : 10;
   for (let k = 0; k < buckets.length; k++) {
@@ -189,23 +189,26 @@ export async function exportGanttToExcel(args: {
     const pic = t.picUserId ? memberById.get(t.picUserId) : undefined;
     const days = daysBetween(t.startDate, t.endDate) + 1;
 
-    row.getCell(1).value = t.title;
-    row.getCell(2).value = pic?.name ?? '';
-    row.getCell(3).value = t.startDate;
-    row.getCell(4).value = t.endDate;
-    row.getCell(5).value = days;
-    row.getCell(6).value = t.status === 'in_progress' ? 'In Progress'
+    row.getCell(1).value = t.ticketNumber;
+    row.getCell(2).value = t.title;
+    row.getCell(3).value = pic?.name ?? '';
+    row.getCell(4).value = t.startDate;
+    row.getCell(5).value = t.endDate;
+    row.getCell(6).value = days;
+    row.getCell(7).value = t.status === 'in_progress' ? 'In Progress'
       : t.status.charAt(0).toUpperCase() + t.status.slice(1);
 
     for (let c = 1; c <= FIXED_HEADERS.length; c++) {
       const cell = row.getCell(c);
       cell.font = { size: 11, color: { argb: 'FF111111' } };
-      cell.alignment = { vertical: 'middle', horizontal: c === 5 ? 'right' : 'left' };
+      cell.alignment = { vertical: 'middle', horizontal: c === 6 ? 'right' : 'left' };
       cell.border = {
         bottom: { style: 'hair', color: { argb: RULE_COLOR } },
         right:  { style: 'hair', color: { argb: RULE_COLOR } },
       };
-      if (t.status === 'done') {
+      if (c === 1) {
+        cell.font = { size: 10, color: { argb: MUTED_COLOR }, name: 'Menlo' };
+      } else if (t.status === 'done') {
         cell.font = { size: 11, color: { argb: MUTED_COLOR }, strike: true };
       }
     }

@@ -29,6 +29,7 @@ export const projectMembers = pgTable('project_members', {
 
 export const tasks = pgTable('tasks', {
   id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  ticketNumber: text('ticket_number').notNull().unique().default(sql`gen_ticket_number()`),
   projectId: uuid('project_id').notNull().references(() => projects.id, { onDelete: 'cascade' }),
   title: text('title').notNull(),
   description: text('description'),
