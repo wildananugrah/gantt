@@ -170,7 +170,11 @@ function BarWithDrag(props: {
   task: Task; pic?: User; rangeStart: string; dayWidth: number; top: number; height: number;
   selected: boolean; onSelect: () => void; onCommit: (s: string, e: string) => void;
 }) {
-  const drag = useBarDrag({ dayWidth: props.dayWidth, onCommit: props.onCommit });
+  const drag = useBarDrag({
+    dayWidth: props.dayWidth,
+    onCommit: props.onCommit,
+    onSelect: props.onSelect,
+  });
   return (
     <GanttBar
       task={props.task}
@@ -180,13 +184,12 @@ function BarWithDrag(props: {
       top={props.top}
       height={props.height}
       selected={props.selected}
-      onSelect={props.onSelect}
       onPointerDown={(e) => {
         const initial = { startDate: props.task.startDate, endDate: props.task.endDate };
         drag.onPointerDown(e, initial);
         const el = e.currentTarget;
-        const move = drag.onPointerMove as any;
-        const up = (ev: any) => {
+        const move = drag.onPointerMove;
+        const up = (ev: PointerEvent) => {
           drag.onPointerUp(ev);
           el.removeEventListener('pointermove', move);
         };

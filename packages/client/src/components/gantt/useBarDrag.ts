@@ -3,6 +3,9 @@ import { addDays, daysSinceEpoch } from '../../lib/date';
 
 export type DragMode = 'move' | 'resizeStart' | 'resizeEnd';
 
+/** Pointer must travel at least this far before a click is treated as a drag. */
+export const DRAG_THRESHOLD_PX = 5;
+
 export function computeDragDelta(startX: number, currentX: number, dayWidth: number): number {
   return Math.round((currentX - startX) / dayWidth);
 }
@@ -33,6 +36,7 @@ export function applyDrag(
 export function useBarDrag(opts: {
   dayWidth: number;
   onCommit: (startDate: string, endDate: string) => void;
+  onSelect: () => void;
 }) {
   const state = useRef<{
     mode: DragMode;
@@ -40,21 +44,28 @@ export function useBarDrag(opts: {
     initial: { startDate: string; endDate: string };
     el: HTMLDivElement;
     baseWidth: number;
+    activated: boolean;
   } | null>(null);
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>, initial: { startDate: string; endDate: string }) {
+    if (e.button !== 0) return;
     const target = e.target as HTMLElement;
     const handle = target.getAttribute('data-handle');
     const mode: DragMode = handle === 'start' ? 'resizeStart' : handle === 'end' ? 'resizeEnd' : 'move';
     const el = e.currentTarget;
     el.setPointerCapture(e.pointerId);
-    state.current = { mode, startX: e.clientX, initial, el, baseWidth: el.clientWidth };
-    el.style.willChange = 'transform';
+    state.current = { mode, startX: e.clientX, initial, el, baseWidth: el.clientWidth, activated: false };
   }
 
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+  function onPointerMove(e: PointerEvent) {
     if (!state.current) return;
     const { mode, startX, el, baseWidth } = state.current;
+    const moved = e.clientX - startX;
+    if (!state.current.activated) {
+      if (Math.abs(moved) < DRAG_THRESHOLD_PX) return;
+      state.current.activated = true;
+      el.style.willChange = 'transform';
+    }
     const delta = computeDragDelta(startX, e.clientX, opts.dayWidth);
     const px = delta * opts.dayWidth;
     if (mode === 'move') {
@@ -67,13 +78,17 @@ export function useBarDrag(opts: {
     }
   }
 
-  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+  function onPointerUp(e: PointerEvent) {
     if (!state.current) return;
-    const { mode, startX, initial, el } = state.current;
+    const { mode, startX, initial, el, activated } = state.current;
     el.style.transform = '';
     el.style.width = '';
     el.style.willChange = '';
     state.current = null;
+    if (!activated) {
+      opts.onSelect();
+      return;
+    }
     const delta = computeDragDelta(startX, e.clientX, opts.dayWidth);
     if (delta === 0) return;
     const next = applyDrag(initial.startDate, initial.endDate, delta, mode);

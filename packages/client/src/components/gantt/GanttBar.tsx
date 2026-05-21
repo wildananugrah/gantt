@@ -13,7 +13,7 @@ const HATCH_STYLE: React.CSSProperties = {
 };
 
 export function GanttBar({
-  task, rangeStart, dayWidth, top, height, pic, selected, onSelect, onPointerDown,
+  task, rangeStart, dayWidth, top, height, pic, selected, onPointerDown,
 }: {
   task: Task;
   rangeStart: string;
@@ -22,7 +22,6 @@ export function GanttBar({
   height: number;
   pic?: User;
   selected: boolean;
-  onSelect: () => void;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>) => void;
 }) {
   const left = daysBetween(rangeStart, task.startDate) * dayWidth;
@@ -35,9 +34,8 @@ export function GanttBar({
     <div
       data-task-id={task.id}
       onPointerDown={onPointerDown}
-      onClick={(e) => { e.stopPropagation(); onSelect(); }}
       style={{ left, top: top + inset, width: Math.max(width, 8), height: barHeight }}
-      className={`absolute rounded text-[11px] flex items-center px-2 gap-1.5 cursor-grab active:cursor-grabbing ${STATUS_BAR[task.status]} ${selected ? 'ring-2 ring-focus/60 ring-offset-1' : ''}`}
+      className={`absolute rounded text-[11px] flex items-center px-2 gap-1.5 cursor-grab active:cursor-grabbing select-none ${STATUS_BAR[task.status]} ${selected ? 'ring-2 ring-focus/60 ring-offset-1' : ''}`}
     >
       {task.status === 'done' && (
         <span className="absolute inset-0 pointer-events-none rounded" style={HATCH_STYLE} />
