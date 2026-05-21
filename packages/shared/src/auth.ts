@@ -16,3 +16,10 @@ export const UpdateProfileInput = z.object({
   name: z.string().min(1).max(120),
 });
 export type UpdateProfileInput = z.infer<typeof UpdateProfileInput>;
+
+export const RegisterInput = z.object({
+  name: z.string().min(1).max(120),
+  email: z.string().email(),
+  password: z.string().min(8).max(200),
+});
+export type RegisterInput = z.infer<typeof RegisterInput>;

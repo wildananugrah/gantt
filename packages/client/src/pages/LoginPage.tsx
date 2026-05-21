@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { Button } from '../components/ui/Button';
@@ -34,6 +34,10 @@ export function LoginPage() {
         <Input value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password" type="password" autoComplete="current-password" />
         {err && <p className="text-[12px] text-red-600">{err}</p>}
         <Button disabled={busy} type="submit">{busy ? 'Signing in…' : 'Sign in'}</Button>
+        <p className="text-[12px] text-muted text-center mt-1">
+          No account?{' '}
+          <Link to="/register" className="text-ink hover:underline">Create one</Link>
+        </p>
       </form>
     </div>
   );

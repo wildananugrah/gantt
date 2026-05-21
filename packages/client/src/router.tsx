@@ -13,6 +13,7 @@ import { MembersPage } from './pages/MembersPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TicketPage } from './pages/TicketPage';
+import { RegisterPage } from './pages/RegisterPage';
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -22,6 +23,12 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
+});
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
 });
 
 const landingRoute = createRoute({
@@ -64,6 +71,7 @@ const ticketRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  registerRoute,
   landingRoute,
   projectRoute,
   membersRoute,

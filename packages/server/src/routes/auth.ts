@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { eq } from 'drizzle-orm';
-import { LoginInput, ChangePasswordInput } from '@app/shared';
+import { LoginInput, ChangePasswordInput, RegisterInput } from '@app/shared';
 import { db } from '../db/client';
 import { users } from '../db/schema';
 import { verifyPassword, hashPassword } from '../lib/password';
@@ -15,7 +15,58 @@ import type { AppContext } from '../app';
 
 const SEVEN_DAYS = 60 * 60 * 24 * 7;
 
+/** Sets the auth cookie for a given user. */
+function setAuthCookie(c: any, userId: string, role: 'admin' | 'member', token: string) {
+  setCookie(c, 'auth', token, {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: SEVEN_DAYS,
+  });
+  // userId/role unused here but kept in signature so call sites read coherently
+  void userId; void role;
+}
+
 export const authRoutes = new Hono<AppContext>()
+
+  .post('/register', rateLimit({ max: 5, windowMs: 15 * 60 * 1000 }), async (c) => {
+    const { name, email, password } = await parseBody(c, RegisterInput);
+    const emailLc = email.toLowerCase();
+
+    const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, emailLc)).limit(1);
+    if (existing[0]) {
+      throw new HttpError(409, 'CONFLICT', 'email already in use');
+    }
+
+    const hash = await hashPassword(password);
+    let user;
+    try {
+      const [created] = await db.insert(users).values({
+        email: emailLc,
+        passwordHash: hash,
+        name,
+        role: 'member',
+      }).returning();
+      user = created;
+    } catch (e: any) {
+      // race: another request created the same email between the check and insert
+      if (String(e).includes('users_email_unique') || e?.code === '23505') {
+        throw new HttpError(409, 'CONFLICT', 'email already in use');
+      }
+      throw e;
+    }
+    if (!user) throw new HttpError(500, 'INTERNAL', 'failed to create user');
+
+    const token = await signJwt({ sub: user.id, role: user.role }, env.JWT_SECRET, SEVEN_DAYS);
+    setAuthCookie(c, user.id, user.role, token);
+
+    return c.json({
+      user: {
+        id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt,
+      },
+    }, 201);
+  })
 
   .post('/login', rateLimit({ max: 5, windowMs: 15 * 60 * 1000 }), async (c) => {
     const { email, password } = await parseBody(c, LoginInput);
