@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { CreateTaskInput, UpdateTaskInput } from '@app/shared';
 import { db } from '../db/client';
 import { tasks, taskDependencies, taskFiles } from '../db/schema';
@@ -38,6 +39,25 @@ export const projectTasksRoutes = new Hono<AppContext>()
       sortOrder: body.sortOrder ?? 0,
     }).returning();
     return c.json(t, 201);
+  })
+
+  .post('/:projectId/tasks/reorder', requireProjectAccess('projectId'), async (c) => {
+    const projectId = c.req.param('projectId');
+    const { taskIds } = await parseBody(c, z.object({ taskIds: z.array(z.string().uuid()).min(1) }));
+    // Verify all IDs belong to this project — refuse if any are foreign
+    const rows = await db.select({ id: tasks.id }).from(tasks)
+      .where(and(eq(tasks.projectId, projectId), inArray(tasks.id, taskIds)));
+    if (rows.length !== taskIds.length) {
+      throw new HttpError(409, 'CONFLICT', 'reorder list contains tasks not in this project');
+    }
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < taskIds.length; i++) {
+        await tx.update(tasks)
+          .set({ sortOrder: i, updatedAt: sql`now()` as any })
+          .where(eq(tasks.id, taskIds[i]!));
+      }
+    });
+    return c.json({ ok: true });
   });
 
 export const taskRoutes = new Hono<AppContext>()

@@ -14,6 +14,7 @@ import { TodayLine } from './TodayLine';
 import { GanttBar } from './GanttBar';
 import { ArrowsLayer } from './ArrowsLayer';
 import { useBarDrag } from './useBarDrag';
+import { useRowDrag, reorderArray } from './useRowDrag';
 
 export type GanttControl = { scrollToToday: () => void };
 
@@ -101,26 +102,79 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
     },
   });
 
+  const reorder = useMutation({
+    mutationFn: (taskIds: string[]) =>
+      api.post(`/projects/${projectId}/tasks/reorder`, { taskIds }),
+    onMutate: async (taskIds) => {
+      await qc.cancelQueries({ queryKey: ['tasks', projectId] });
+      const prev = qc.getQueryData<{ tasks: Task[]; dependencies: Dependency[] }>(['tasks', projectId]);
+      if (prev) {
+        const byId = new Map(prev.tasks.map((t) => [t.id, t]));
+        qc.setQueryData(['tasks', projectId], {
+          ...prev,
+          tasks: taskIds.map((id, i) => ({ ...(byId.get(id)!), sortOrder: i })),
+        });
+      }
+      return { prev };
+    },
+    onSuccess: () => toast.success('Tasks reordered'),
+    onError: (e: any, _v, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(['tasks', projectId], ctx.prev);
+      toast.error(`Couldn't reorder: ${e.message ?? 'unknown error'}`);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['tasks', projectId] }),
+  });
+
+  const leftColumnRef = useRef<HTMLDivElement>(null);
+  const headerOffset = 48; // h-12 header inside the left column
+  const rowDrag = useRowDrag({
+    rowHeight: ROW_HEIGHT,
+    rowCount: sortedTasks.length,
+    getRowTops: () => sortedTasks.map((_, i) => headerOffset + i * ROW_HEIGHT),
+    getContainerY: () => {
+      const r = leftColumnRef.current?.getBoundingClientRect();
+      return (r?.top ?? 0) - (leftColumnRef.current?.scrollTop ?? 0);
+    },
+    onCommit: (src, dst) => {
+      const reordered = reorderArray(sortedTasks, src, dst);
+      reorder.mutate(reordered.map((t) => t.id));
+    },
+    onSelect: (i) => nav({ to: '.', search: { task: sortedTasks[i]!.id }, replace: true }),
+  });
+
   return (
     <div className="h-full flex border-t border-rule">
       <div
-        className="flex-shrink-0 border-r border-rule bg-paper overflow-y-auto"
+        ref={leftColumnRef}
+        className="flex-shrink-0 border-r border-rule bg-paper overflow-y-auto relative"
         style={{ width: LEFT_COLUMN_WIDTH }}
       >
         <div className="h-12 border-b border-rule px-3 flex items-center text-[11px] text-muted uppercase tracking-wider">
           Task / PIC
         </div>
-        {sortedTasks.map((t) => {
+        {sortedTasks.map((t, i) => {
           const pic = members.find((m) => m.id === t.picUserId);
+          const isDragging = rowDrag.preview?.sourceIndex === i;
           return (
             <div
               key={t.id}
-              className={`px-3 border-b border-rule flex items-center gap-2 cursor-pointer hover:bg-mist ${
+              onPointerDown={(e) => {
+                rowDrag.onPointerDown(e, i);
+                const el = e.currentTarget;
+                const move = rowDrag.onPointerMove;
+                const up = (ev: PointerEvent) => {
+                  rowDrag.onPointerUp(ev);
+                  el.removeEventListener('pointermove', move);
+                };
+                el.addEventListener('pointermove', move);
+                el.addEventListener('pointerup', up, { once: true });
+              }}
+              className={`px-3 border-b border-rule flex items-center gap-2 cursor-grab active:cursor-grabbing select-none hover:bg-mist ${
                 selectedId === t.id ? 'bg-mist' : ''
-              }`}
+              } ${isDragging ? 'opacity-40' : ''}`}
               style={{ height: ROW_HEIGHT }}
-              onClick={() => nav({ to: '.', search: { task: t.id }, replace: true })}
             >
+              <span className="text-muted text-[11px] flex-shrink-0">⋮⋮</span>
               <span className="text-[13px] truncate flex-1">{t.title}</span>
               {pic && (
                 <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-paper text-ink border border-rule text-[9px] font-semibold">
@@ -130,6 +184,12 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
             </div>
           );
         })}
+        {rowDrag.preview && rowDrag.preview.dropIndex !== rowDrag.preview.sourceIndex && rowDrag.preview.dropIndex !== rowDrag.preview.sourceIndex + 1 && (
+          <div
+            className="absolute left-2 right-2 h-0.5 bg-focus pointer-events-none"
+            style={{ top: headerOffset + rowDrag.preview.dropIndex * ROW_HEIGHT - 1 }}
+          />
+        )}
       </div>
       <div ref={scrollerRef} className="flex-1 overflow-auto relative">
         <div style={{ width: contentWidth }} className="relative">
