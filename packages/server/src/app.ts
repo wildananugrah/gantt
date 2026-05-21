@@ -5,6 +5,9 @@ import { errorHandler } from './middleware/error';
 import { authRoutes } from './routes/auth';
 import { usersRoutes } from './routes/users';
 import { projectsRoutes } from './routes/projects';
+import { projectTasksRoutes, taskRoutes } from './routes/tasks';
+import { dependencyRoutes } from './routes/dependencies';
+import { taskFilesRoutes, fileRoutes } from './routes/files';
 
 export type AppContext = {
   Variables: {
@@ -27,6 +30,11 @@ export function createApp() {
   app.route('/api/auth', authRoutes);
   app.route('/api/users', usersRoutes);
   app.route('/api/projects', projectsRoutes);
+  app.route('/api/projects', projectTasksRoutes);
+  app.route('/api/tasks', taskRoutes);
+  app.route('/api/tasks', dependencyRoutes);
+  app.route('/api/tasks', taskFilesRoutes);
+  app.route('/api/files', fileRoutes);
 
   return app;
 }

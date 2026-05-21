@@ -1,0 +1,85 @@
+import { Hono } from 'hono';
+import { eq, inArray, sql } from 'drizzle-orm';
+import { CreateTaskInput, UpdateTaskInput } from '@app/shared';
+import { db } from '../db/client';
+import { tasks, taskDependencies, taskFiles } from '../db/schema';
+import { requireAuth } from '../middleware/auth';
+import { requireProjectAccess } from '../middleware/project-access';
+import { parseBody } from '../middleware/validate';
+import { HttpError } from '../middleware/error';
+import { assertProjectMember } from '../lib/membership';
+import type { AppContext } from '../app';
+
+export const projectTasksRoutes = new Hono<AppContext>()
+  .use('*', requireAuth)
+
+  .get('/:projectId/tasks', requireProjectAccess('projectId'), async (c) => {
+    const projectId = c.req.param('projectId');
+    const ts = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    const ids = ts.map((t) => t.id);
+    const deps = ids.length === 0
+      ? []
+      : await db.select().from(taskDependencies).where(inArray(taskDependencies.successorId, ids));
+    return c.json({ tasks: ts, dependencies: deps });
+  })
+
+  .post('/:projectId/tasks', requireProjectAccess('projectId'), async (c) => {
+    const projectId = c.req.param('projectId');
+    const body = await parseBody(c, CreateTaskInput);
+    if (body.picUserId) await assertProjectMember(projectId, body.picUserId);
+    const [t] = await db.insert(tasks).values({
+      projectId,
+      title: body.title,
+      description: body.description ?? null,
+      startDate: body.startDate,
+      endDate: body.endDate,
+      status: body.status,
+      picUserId: body.picUserId ?? null,
+      sortOrder: body.sortOrder ?? 0,
+    }).returning();
+    return c.json(t, 201);
+  });
+
+export const taskRoutes = new Hono<AppContext>()
+  .use('*', requireAuth)
+
+  .get('/:id', async (c) => {
+    const id = c.req.param('id');
+    const [t] = await db.select().from(tasks).where(eq(tasks.id, id));
+    if (!t) throw new HttpError(404, 'NOT_FOUND', 'task not found');
+    const me = c.get('user');
+    if (me.role !== 'admin') await assertProjectMember(t.projectId, me.id);
+    const files = await db.select().from(taskFiles).where(eq(taskFiles.taskId, id));
+    const deps = await db.select().from(taskDependencies).where(eq(taskDependencies.successorId, id));
+    return c.json({ ...t, files, dependencies: deps });
+  })
+
+  .patch('/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await parseBody(c, UpdateTaskInput);
+    const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
+    if (!existing) throw new HttpError(404, 'NOT_FOUND', 'task not found');
+    const me = c.get('user');
+    if (me.role !== 'admin') await assertProjectMember(existing.projectId, me.id);
+    if (body.picUserId) await assertProjectMember(existing.projectId, body.picUserId);
+    const patch: Partial<typeof tasks.$inferInsert> = { updatedAt: sql`now()` as any };
+    if (body.title !== undefined) patch.title = body.title;
+    if (body.description !== undefined) patch.description = body.description;
+    if (body.startDate !== undefined) patch.startDate = body.startDate;
+    if (body.endDate !== undefined) patch.endDate = body.endDate;
+    if (body.status !== undefined) patch.status = body.status;
+    if (body.picUserId !== undefined) patch.picUserId = body.picUserId;
+    if (body.sortOrder !== undefined) patch.sortOrder = body.sortOrder;
+    const [t] = await db.update(tasks).set(patch).where(eq(tasks.id, id)).returning();
+    return c.json(t);
+  })
+
+  .delete('/:id', async (c) => {
+    const id = c.req.param('id');
+    const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
+    if (!existing) throw new HttpError(404, 'NOT_FOUND', 'task not found');
+    const me = c.get('user');
+    if (me.role !== 'admin') await assertProjectMember(existing.projectId, me.id);
+    await db.delete(tasks).where(eq(tasks.id, id));
+    return c.json({ ok: true });
+  });

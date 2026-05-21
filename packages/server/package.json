@@ -10,7 +10,8 @@
     "test": "bun --env-file=../../.env test",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun --env-file=../../.env run src/db/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "reconcile-orphans": "bun --env-file=../../.env run src/scripts/reconcile-orphans.ts"
   },
   "dependencies": {
     "@app/shared": "workspace:*",
