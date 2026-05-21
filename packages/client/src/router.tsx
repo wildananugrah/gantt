@@ -12,6 +12,7 @@ import { ProjectPage } from './pages/ProjectPage';
 import { MembersPage } from './pages/MembersPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { TicketPage } from './pages/TicketPage';
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -55,6 +56,12 @@ const profileRoute = createRoute({
   component: ProfilePage,
 });
 
+const ticketRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks/$ticketNumber',
+  component: TicketPage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   landingRoute,
@@ -62,6 +69,7 @@ const routeTree = rootRoute.addChildren([
   membersRoute,
   usersAdminRoute,
   profileRoute,
+  ticketRoute,
 ]);
 
 export const router = createRouter({ routeTree });

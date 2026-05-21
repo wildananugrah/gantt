@@ -60,6 +60,23 @@ export const projectTasksRoutes = new Hono<AppContext>()
     return c.json({ ok: true });
   });
 
+export const ticketRoutes = new Hono<AppContext>()
+  .use('*', requireAuth)
+
+  .get('/:ticket', async (c) => {
+    const ticket = c.req.param('ticket');
+    if (!/^[a-z0-9]{10}$/.test(ticket)) {
+      throw new HttpError(404, 'NOT_FOUND', 'ticket not found');
+    }
+    const [t] = await db.select().from(tasks).where(eq(tasks.ticketNumber, ticket));
+    if (!t) throw new HttpError(404, 'NOT_FOUND', 'ticket not found');
+    const me = c.get('user');
+    if (me.role !== 'admin') await assertProjectMember(t.projectId, me.id);
+    const files = await db.select().from(taskFiles).where(eq(taskFiles.taskId, t.id));
+    const deps = await db.select().from(taskDependencies).where(eq(taskDependencies.successorId, t.id));
+    return c.json({ ...t, files, dependencies: deps });
+  });
+
 export const taskRoutes = new Hono<AppContext>()
   .use('*', requireAuth)
 

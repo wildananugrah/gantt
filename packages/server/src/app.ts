@@ -6,7 +6,7 @@ import { errorHandler } from './middleware/error';
 import { authRoutes } from './routes/auth';
 import { usersRoutes } from './routes/users';
 import { projectsRoutes } from './routes/projects';
-import { projectTasksRoutes, taskRoutes } from './routes/tasks';
+import { projectTasksRoutes, taskRoutes, ticketRoutes } from './routes/tasks';
 import { dependencyRoutes } from './routes/dependencies';
 import { taskFilesRoutes, fileRoutes } from './routes/files';
 
@@ -41,6 +41,7 @@ export function createApp() {
   app.route('/api/tasks', taskRoutes);
   app.route('/api/tasks', dependencyRoutes);
   app.route('/api/tasks', taskFilesRoutes);
+  app.route('/api/tickets', ticketRoutes);
   app.route('/api/files', fileRoutes);
 
   if (env.NODE_ENV === 'production') {

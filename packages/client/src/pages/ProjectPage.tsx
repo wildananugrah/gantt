@@ -12,6 +12,7 @@ import type { Zoom } from '../lib/date';
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { TaskSearch } from '../components/project/TaskSearch';
+import { EditProjectDialog } from '../components/project/EditProjectDialog';
 
 export function ProjectPage() {
   const { user, loading } = useAuth();
@@ -20,6 +21,7 @@ export function ProjectPage() {
   const search = useSearch({ strict: false }) as { task?: string };
   const [zoom, setZoom] = useState<Zoom>('week');
   const [newOpen, setNewOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const ganttRef = useRef<GanttControl>(null);
 
   useEffect(() => { if (!loading && !user) nav({ to: '/login' }); }, [loading, user, nav]);
@@ -53,6 +55,13 @@ export function ProjectPage() {
         <span className="text-[11px] text-muted">
           {projectQ.data ? `${projectQ.data.members.length} member${projectQ.data.members.length === 1 ? '' : 's'}` : ''}
         </span>
+        {user.role === 'admin' && projectQ.data && (
+          <button
+            onClick={() => setEditOpen(true)}
+            className="text-[12px] text-muted hover:text-ink"
+            title="Edit project name & description"
+          >Edit</button>
+        )}
         {tasksQ.data && tasksQ.data.tasks.length > 0 && (
           <TaskSearch tasks={tasksQ.data.tasks} projectId={params.id} />
         )}
@@ -130,6 +139,13 @@ export function ProjectPage() {
           onClose={() => setNewOpen(false)}
           projectId={params.id}
           members={projectQ.data.members}
+        />
+      )}
+      {projectQ.data && user.role === 'admin' && (
+        <EditProjectDialog
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          project={projectQ.data}
         />
       )}
     </div>
