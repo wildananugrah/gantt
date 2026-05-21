@@ -6,7 +6,7 @@ server {
   client_max_body_size 1024M;
   server_name gantt.mhamzah.id;
 
-  root /var/www/html/carreel/driver/dist;
+  root /var/www/html/gantt;
   index index.html;
 
   # Security Headers
@@ -32,7 +32,7 @@ server {
 
   # API proxy to backend
   location /api/ {
-      proxy_pass http://localhost:3001;
+      proxy_pass http://localhost:3004;
       proxy_set_header Host $host;
       proxy_set_header X-Real-IP $remote_addr;
       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
