@@ -11,6 +11,7 @@ import { NewTaskDialog } from '../components/task-panel/NewTaskDialog';
 import type { Zoom } from '../lib/date';
 import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
+import { TaskSearch } from '../components/project/TaskSearch';
 
 export function ProjectPage() {
   const { user, loading } = useAuth();
@@ -52,6 +53,9 @@ export function ProjectPage() {
         <span className="text-[11px] text-muted">
           {projectQ.data ? `${projectQ.data.members.length} member${projectQ.data.members.length === 1 ? '' : 's'}` : ''}
         </span>
+        {tasksQ.data && tasksQ.data.tasks.length > 0 && (
+          <TaskSearch tasks={tasksQ.data.tasks} projectId={params.id} />
+        )}
         <div className="ml-auto flex items-center gap-2">
           <Link to="/projects/$id/members" params={{ id: params.id }} className="text-[12px] text-muted hover:text-ink">Members</Link>
           <Button onClick={() => setNewOpen(true)}>+ Task</Button>
