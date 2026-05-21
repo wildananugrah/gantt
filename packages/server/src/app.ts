@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { serveStatic } from 'hono/bun';
 import { env } from './env';
 import { errorHandler } from './middleware/error';
 import { authRoutes } from './routes/auth';
@@ -35,6 +36,11 @@ export function createApp() {
   app.route('/api/tasks', dependencyRoutes);
   app.route('/api/tasks', taskFilesRoutes);
   app.route('/api/files', fileRoutes);
+
+  if (env.NODE_ENV === 'production') {
+    app.use('/*', serveStatic({ root: '../client/dist' }));
+    app.get('*', serveStatic({ path: '../client/dist/index.html' }));
+  }
 
   return app;
 }

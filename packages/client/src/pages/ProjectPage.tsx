@@ -10,6 +10,7 @@ import { TaskDetailPanel } from '../components/task-panel/TaskDetailPanel';
 import { NewTaskDialog } from '../components/task-panel/NewTaskDialog';
 import type { Zoom } from '../lib/date';
 import { Button } from '../components/ui/Button';
+import { ErrorBanner } from '../components/ErrorBanner';
 
 export function ProjectPage() {
   const { user, loading } = useAuth();
@@ -40,6 +41,12 @@ export function ProjectPage() {
   return (
     <div className="h-full flex flex-col">
       <AppTopBar />
+      {(tasksQ.error || projectQ.error) && (
+        <ErrorBanner
+          message={`Couldn't load this project: ${(tasksQ.error || projectQ.error)!.message}`}
+          onRetry={() => { tasksQ.refetch(); projectQ.refetch(); }}
+        />
+      )}
       <div className="h-10 border-b border-rule bg-paper flex items-center px-4 gap-3">
         <h1 className="text-[14px] font-semibold">{projectQ.data?.name ?? '…'}</h1>
         <span className="text-[11px] text-muted">
