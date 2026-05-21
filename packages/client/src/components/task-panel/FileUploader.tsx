@@ -1,21 +1,40 @@
 import { useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { TaskFile, PresignUploadResult } from '@app/shared';
+import type { TaskFile } from '@app/shared';
 import { api, ApiException } from '../../lib/api';
 import { useToast } from '../../lib/toast';
 import { Button } from '../ui/Button';
 
-function uploadWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+/**
+ * POSTs a multipart/form-data upload to our own API (NOT to S3 directly), reporting progress.
+ * The server proxies the bytes to S3 so the browser doesn't need to reach the bucket directly.
+ */
+function uploadWithProgress(url: string, file: File, onProgress: (pct: number) => void): Promise<TaskFile> {
   return new Promise((resolve, reject) => {
+    const form = new FormData();
+    form.append('file', file);
+
     const xhr = new XMLHttpRequest();
-    xhr.open('PUT', url);
-    xhr.setRequestHeader('content-type', file.type);
+    xhr.open('POST', url);
+    xhr.withCredentials = true; // send the auth cookie
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
     };
-    xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`upload failed: ${xhr.status}`)));
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try { resolve(JSON.parse(xhr.responseText) as TaskFile); }
+        catch { reject(new Error('upload succeeded but response was not JSON')); }
+      } else {
+        let msg = `upload failed: ${xhr.status}`;
+        try {
+          const err = JSON.parse(xhr.responseText);
+          if (err?.error?.message) msg = err.error.message;
+        } catch { /* keep default */ }
+        reject(new Error(msg));
+      }
+    };
     xhr.onerror = () => reject(new Error('network error'));
-    xhr.send(file);
+    xhr.send(form);
   });
 }
 
@@ -32,18 +51,9 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
 
   async function uploadOne(file: File): Promise<void> {
     setProgress({ filename: file.name, pct: 0 });
-    const presign = await api.post<PresignUploadResult>(`/tasks/${taskId}/files/presign`, {
-      filename: file.name,
-      contentType: file.type || 'application/octet-stream',
-      sizeBytes: file.size,
-    });
-    await uploadWithProgress(presign.uploadUrl, file, (pct) => setProgress({ filename: file.name, pct }));
-    await api.post(`/tasks/${taskId}/files`, {
-      filename: file.name,
-      s3Key: presign.s3Key,
-      contentType: file.type || 'application/octet-stream',
-      sizeBytes: file.size,
-    });
+    await uploadWithProgress(`/api/tasks/${taskId}/files`, file, (pct) =>
+      setProgress({ filename: file.name, pct }),
+    );
   }
 
   const uploadAll = useMutation({

@@ -11,11 +11,14 @@ class ApiException extends Error {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const isFormData = body instanceof FormData;
   const res = await fetch(`/api${path}`, {
     method,
     credentials: 'include',
-    headers: body ? { 'content-type': 'application/json' } : {},
-    body: body ? JSON.stringify(body) : undefined,
+    headers: isFormData
+      ? {}
+      : (body ? { 'content-type': 'application/json' } : {}),
+    body: isFormData ? body : (body ? JSON.stringify(body) : undefined),
   });
   if (res.status === 204) return undefined as T;
   const text = await res.text();

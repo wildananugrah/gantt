@@ -42,3 +42,21 @@ export async function deleteObject(key: string): Promise<void> {
     throw new Error(`S3 delete failed: ${res.status}`);
   }
 }
+
+/** Server-side PUT to S3. Used when the browser cannot reach S3 directly. */
+export async function putObject(key: string, body: Blob | ArrayBuffer | ReadableStream, contentType: string): Promise<void> {
+  const res = await client.fetch(objectUrl(key), {
+    method: 'PUT',
+    headers: { 'content-type': contentType },
+    body: body as any,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`S3 put failed: ${res.status} ${text}`);
+  }
+}
+
+/** Server-side GET from S3. Returns the upstream Response so the caller can stream it. */
+export async function getObject(key: string): Promise<Response> {
+  return client.fetch(objectUrl(key), { method: 'GET' });
+}
