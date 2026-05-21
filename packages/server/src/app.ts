@@ -4,6 +4,7 @@ import { env } from './env';
 import { errorHandler } from './middleware/error';
 import { authRoutes } from './routes/auth';
 import { usersRoutes } from './routes/users';
+import { projectsRoutes } from './routes/projects';
 
 export type AppContext = {
   Variables: {
@@ -25,6 +26,7 @@ export function createApp() {
 
   app.route('/api/auth', authRoutes);
   app.route('/api/users', usersRoutes);
+  app.route('/api/projects', projectsRoutes);
 
   return app;
 }
