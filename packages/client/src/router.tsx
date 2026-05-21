@@ -11,6 +11,7 @@ import { LandingPage } from './pages/LandingPage';
 import { ProjectPage } from './pages/ProjectPage';
 import { MembersPage } from './pages/MembersPage';
 import { UsersAdminPage } from './pages/UsersAdminPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -48,12 +49,19 @@ const usersAdminRoute = createRoute({
   component: UsersAdminPage,
 });
 
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/settings/profile',
+  component: ProfilePage,
+});
+
 const routeTree = rootRoute.addChildren([
   loginRoute,
   landingRoute,
   projectRoute,
   membersRoute,
   usersAdminRoute,
+  profileRoute,
 ]);
 
 export const router = createRouter({ routeTree });

@@ -12,7 +12,7 @@ export function AppTopBar() {
         {user?.role === 'admin' && (
           <Link to="/settings/users" className="text-[12px] text-muted hover:text-ink">Users</Link>
         )}
-        <span className="text-[12px] text-muted">{user?.email}</span>
+        <Link to="/settings/profile" className="text-[12px] text-muted hover:text-ink">{user?.email}</Link>
         <button onClick={logout} className="text-[12px] text-muted hover:text-ink">Sign out</button>
       </div>
     </header>

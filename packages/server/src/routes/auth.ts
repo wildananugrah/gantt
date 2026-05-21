@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { setCookie, deleteCookie } from 'hono/cookie';
 import { eq } from 'drizzle-orm';
-import { LoginInput } from '@app/shared';
+import { LoginInput, ChangePasswordInput } from '@app/shared';
 import { db } from '../db/client';
 import { users } from '../db/schema';
-import { verifyPassword } from '../lib/password';
+import { verifyPassword, hashPassword } from '../lib/password';
 import { signJwt } from '../lib/jwt';
 import { env } from '../env';
 import { parseBody } from '../middleware/validate';
@@ -54,4 +54,20 @@ export const authRoutes = new Hono<AppContext>()
         id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt,
       },
     });
+  })
+
+  .post('/change-password', requireAuth, async (c) => {
+    const { currentPassword, newPassword } = await parseBody(c, ChangePasswordInput);
+    const me = c.get('user');
+    const row = await db.select().from(users).where(eq(users.id, me.id)).limit(1);
+    if (!row[0]) throw new HttpError(401, 'UNAUTHORIZED', 'user not found');
+    if (!(await verifyPassword(currentPassword, row[0].passwordHash))) {
+      throw new HttpError(401, 'UNAUTHORIZED', 'current password is incorrect');
+    }
+    if (currentPassword === newPassword) {
+      throw new HttpError(409, 'CONFLICT', 'new password must differ from current');
+    }
+    const hash = await hashPassword(newPassword);
+    await db.update(users).set({ passwordHash: hash }).where(eq(users.id, me.id));
+    return c.json({ ok: true });
   });
