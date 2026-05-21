@@ -8,3 +8,4 @@ build/
 .superpowers/
 packages/server/src/db/migrations/meta/_journal.json.bak
 coverage/
+.env.*
