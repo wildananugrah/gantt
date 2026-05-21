@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Task, User, TaskStatus } from '@app/shared';
 import { api, ApiException } from '../../lib/api';
+import { useToast } from '../../lib/toast';
 import { Dialog } from '../ui/Dialog';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -12,6 +13,7 @@ export function NewTaskDialog({ open, onClose, projectId, members }: {
   open: boolean; onClose: () => void; projectId: string; members: User[];
 }) {
   const qc = useQueryClient();
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [startDate, setStartDate] = useState(today());
   const [endDate, setEndDate] = useState(today());
@@ -24,12 +26,17 @@ export function NewTaskDialog({ open, onClose, projectId, members }: {
       title, startDate, endDate, status,
       picUserId: picUserId || undefined,
     }),
-    onSuccess: () => {
+    onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ['tasks', projectId] });
+      toast.success(`Created "${created.title}"`);
       setTitle(''); setStartDate(today()); setEndDate(today()); setStatus('todo'); setPicUserId('');
       onClose();
     },
-    onError: (e) => setErr(e instanceof ApiException ? e.message : 'failed'),
+    onError: (e) => {
+      const msg = e instanceof ApiException ? e.message : 'failed';
+      setErr(msg);
+      toast.error(`Couldn't create task: ${msg}`);
+    },
   });
 
   return (

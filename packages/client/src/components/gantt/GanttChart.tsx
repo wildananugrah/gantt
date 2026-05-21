@@ -6,6 +6,7 @@ import {
   addDays, computeInitialRange, daysBetween, dayWidthFor, expandRangeIfNearEdge, today, type DateRange, type Zoom,
 } from '../../lib/date';
 import { api } from '../../lib/api';
+import { useToast } from '../../lib/toast';
 import { ROW_HEIGHT, LEFT_COLUMN_WIDTH } from './types';
 import { DateHeader } from './DateHeader';
 import { GridLayer } from './GridLayer';
@@ -33,6 +34,7 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
   const selectedId = search.task;
 
   const qc = useQueryClient();
+  const toast = useToast();
   const [range, setRange] = useState<DateRange>(() => computeInitialRange(tasks));
   const dayWidth = dayWidthFor(zoom);
   const totalDays = daysBetween(range.start, range.end);
@@ -74,7 +76,7 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
   }, [range, dayWidth]);
 
   const updateTask = useMutation({
-    mutationFn: (v: { id: string; startDate: string; endDate: string }) =>
+    mutationFn: (v: { id: string; title: string; startDate: string; endDate: string }) =>
       api.patch(`/tasks/${v.id}`, { startDate: v.startDate, endDate: v.endDate }),
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: ['tasks', projectId] });
@@ -87,8 +89,12 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
       }
       return { prev };
     },
-    onError: (_e, _v, ctx: any) => {
+    onSuccess: (_d, v) => {
+      toast.success(`Updated "${v.title}" → ${v.startDate} – ${v.endDate}`);
+    },
+    onError: (e: any, _v, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(['tasks', projectId], ctx.prev);
+      toast.error(`Couldn't update dates: ${e.message ?? 'unknown error'}`);
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ['tasks', projectId] });
@@ -155,7 +161,7 @@ export const GanttChart = forwardRef<GanttControl, Props>(function GanttChart(
                   height={ROW_HEIGHT}
                   selected={selectedId === t.id}
                   onSelect={() => nav({ to: '.', search: { task: t.id }, replace: true })}
-                  onCommit={(start, end) => updateTask.mutate({ id: t.id, startDate: start, endDate: end })}
+                  onCommit={(start, end) => updateTask.mutate({ id: t.id, title: t.title, startDate: start, endDate: end })}
                 />
               );
             })}

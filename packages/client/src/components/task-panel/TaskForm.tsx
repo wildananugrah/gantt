@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Task, User, TaskStatus, UpdateTaskInput } from '@app/shared';
 import { api } from '../../lib/api';
+import { useToast } from '../../lib/toast';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Select } from '../ui/Select';
@@ -19,6 +20,7 @@ export function TaskForm({ task, projectMembers, onDeleted }: {
   onDeleted: () => void;
 }) {
   const qc = useQueryClient();
+  const toast = useToast();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? '');
   const [startDate, setStartDate] = useState(task.startDate);
@@ -38,19 +40,25 @@ export function TaskForm({ task, projectMembers, onDeleted }: {
 
   const save = useMutation({
     mutationFn: (body: UpdateTaskInput) => api.patch<Task>(`/tasks/${task.id}`, body),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       qc.invalidateQueries({ queryKey: ['task', task.id] });
       qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
+      toast.success(`Updated "${updated.title}"`);
     },
-    onError: (e: any) => setErr(e.message ?? 'save failed'),
+    onError: (e: any) => {
+      setErr(e.message ?? 'save failed');
+      toast.error(`Couldn't save: ${e.message ?? 'unknown error'}`);
+    },
   });
 
   const del = useMutation({
     mutationFn: () => api.delete(`/tasks/${task.id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['tasks', task.projectId] });
+      toast.success(`Deleted "${task.title}"`);
       onDeleted();
     },
+    onError: (e: any) => toast.error(`Couldn't delete: ${e.message ?? 'unknown error'}`),
   });
 
   return (
