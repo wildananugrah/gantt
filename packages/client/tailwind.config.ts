@@ -5,12 +5,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#111111',
-        paper: '#FFFFFF',
-        mist: '#F4F4F4',
-        rule: '#E5E5E5',
-        muted: '#888888',
-        focus: '#0066FF',
+        ink:    'rgb(var(--color-ink) / <alpha-value>)',
+        paper:  'rgb(var(--color-paper) / <alpha-value>)',
+        mist:   'rgb(var(--color-mist) / <alpha-value>)',
+        rule:   'rgb(var(--color-rule) / <alpha-value>)',
+        muted:  'rgb(var(--color-muted) / <alpha-value>)',
+        focus:  'rgb(var(--color-focus) / <alpha-value>)',
       },
       fontFamily: {
         sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

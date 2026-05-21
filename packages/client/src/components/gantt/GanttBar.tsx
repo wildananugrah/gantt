@@ -7,10 +7,6 @@ const STATUS_BAR: Record<Task['status'], string> = {
   done:        'bg-mist text-muted border border-rule line-through',
 };
 
-const HATCH_STYLE: React.CSSProperties = {
-  backgroundImage:
-    'repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0 4px, rgba(0,0,0,0) 4px 8px)',
-};
 
 export function GanttBar({
   task, rangeStart, dayWidth, top, height, pic, selected, onSelect,
@@ -38,7 +34,7 @@ export function GanttBar({
       className={`absolute rounded text-[11px] flex items-center px-2 gap-1.5 cursor-pointer select-none ${STATUS_BAR[task.status]} ${selected ? 'ring-2 ring-focus/60 ring-offset-1' : ''}`}
     >
       {task.status === 'done' && (
-        <span className="absolute inset-0 pointer-events-none rounded" style={HATCH_STYLE} />
+        <span className="absolute inset-0 pointer-events-none rounded hatch-overlay" />
       )}
       {initials && width > 60 && (
         <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-paper text-ink border border-rule text-[9px] font-semibold flex-shrink-0">

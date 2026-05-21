@@ -2,7 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-ink:    17 17 17;
+  --color-paper:  255 255 255;
+  --color-mist:   244 244 244;
+  --color-rule:   229 229 229;
+  --color-muted:  136 136 136;
+  --color-focus:  0 102 255;
+  --color-hatch:  rgba(0, 0, 0, 0.06);
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  --color-ink:    245 245 245;
+  --color-paper:  13 13 13;
+  --color-mist:   26 26 26;
+  --color-rule:   42 42 42;
+  --color-muted:  138 138 138;
+  --color-focus:  77 142 255;
+  --color-hatch:  rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
+
 html, body, #root { height: 100%; }
+body { background: rgb(var(--color-paper)); color: rgb(var(--color-ink)); }
+
+.hatch-overlay {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--color-hatch) 0 4px,
+    transparent 4px 8px
+  );
+}
 
 @keyframes toast-in {
   from { opacity: 0; transform: translateY(-6px); }
