@@ -10,6 +10,12 @@ import { projectTasksRoutes, taskRoutes } from './routes/tasks';
 import { dependencyRoutes } from './routes/dependencies';
 import { taskFilesRoutes, fileRoutes } from './routes/files';
 
+// Port the HTTP server listens on. Sourced from .env (PORT=…), default 3000.
+export const PORT: number = env.PORT;
+
+// Allowed CORS origin (used by the cors() middleware below). Sourced from .env.
+export const CLIENT_ORIGIN: string = env.CLIENT_ORIGIN;
+
 export type AppContext = {
   Variables: {
     user: { id: string; role: 'admin' | 'member' };
@@ -20,7 +26,7 @@ export function createApp() {
   const app = new Hono<AppContext>();
 
   app.use('*', cors({
-    origin: env.CLIENT_ORIGIN,
+    origin: CLIENT_ORIGIN,
     credentials: true,
   }));
 

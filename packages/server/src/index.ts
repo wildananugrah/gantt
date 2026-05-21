@@ -1,14 +1,13 @@
-import { createApp } from './app';
-import { env } from './env';
+import { createApp, PORT } from './app';
 import { ensureBootstrapAdmin } from './lib/bootstrap';
 
 await ensureBootstrapAdmin();
 
 const app = createApp();
 
-console.log(`[server] listening on http://localhost:${env.PORT}`);
+console.log(`[server] listening on http://localhost:${PORT}`);
 
 export default {
-  port: env.PORT,
+  port: PORT,
   fetch: app.fetch,
 };

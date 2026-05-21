@@ -1,18 +1,19 @@
-.PHONY: up down restart logs build status
+.PHONY: up down restart logs status
 
-# Runs the server as a foregrounded Bun process in a docker compose stack.
-# Requires Dockerfile + docker-compose.yml in this directory.
+# Runs the Hono server under PM2. Requires `npm i -g pm2` (or use `bun pm2` if installed locally).
+
 up:
-	docker compose up -d --build
+	pm2 start ecosystem.config.cjs --update-env
+	pm2 save
 
 down:
-	docker compose down
+	-pm2 delete gantt-server
 
 restart:
-	docker compose restart
+	pm2 restart gantt-server --update-env
 
 logs:
-	docker compose logs -f --tail=200
+	pm2 logs gantt-server --lines 200
 
 status:
-	docker compose ps
+	pm2 status gantt-server
