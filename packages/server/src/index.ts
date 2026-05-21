@@ -1,7 +1,9 @@
 import { createApp, PORT } from './app';
 import { ensureBootstrapAdmin } from './lib/bootstrap';
 
-await ensureBootstrapAdmin();
+ensureBootstrapAdmin().catch((err) => {
+  console.error('[bootstrap] failed:', err);
+});
 
 const app = createApp();
 
