@@ -56,6 +56,24 @@ export function ProjectPage() {
           <Link to="/projects/$id/members" params={{ id: params.id }} className="text-[12px] text-muted hover:text-ink">Members</Link>
           <Button onClick={() => setNewOpen(true)}>+ Task</Button>
           <button
+            onClick={async () => {
+              if (!tasksQ.data || !projectQ.data) return;
+              try {
+                const { exportGanttToExcel } = await import('../lib/excel-export');
+                await exportGanttToExcel({
+                  projectName: projectQ.data.name,
+                  tasks: tasksQ.data.tasks,
+                  members: projectQ.data.members,
+                  zoom,
+                });
+              } catch (e: any) {
+                alert(`Export failed: ${e.message ?? e}`);
+              }
+            }}
+            disabled={!tasksQ.data || tasksQ.data.tasks.length === 0}
+            className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist disabled:opacity-50 disabled:cursor-not-allowed"
+          >Export</button>
+          <button
             onClick={() => ganttRef.current?.scrollToToday()}
             className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist"
           >Today</button>
