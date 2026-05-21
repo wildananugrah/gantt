@@ -7,9 +7,9 @@ ensureBootstrapAdmin().catch((err) => {
 
 const app = createApp();
 
-console.log(`[server] listening on http://localhost:${PORT}`);
-
-export default {
+Bun.serve({
   port: PORT,
   fetch: app.fetch,
-};
+});
+
+console.log(`[server] listening on http://localhost:${PORT}`);
