@@ -65,6 +65,7 @@ export function TaskDetailPanel({ taskId, projectMembers, allTasks }: {
               task={data}
               allTasks={allTasks}
               dependencies={data.dependencies}
+              onPredecessorClick={(p) => nav({ to: '.', search: { task: p.id }, replace: true })}
             />
             <section className="flex flex-col gap-2">
               <h3 className="text-[11px] uppercase tracking-wider text-muted">Whiteboard</h3>

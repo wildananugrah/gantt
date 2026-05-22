@@ -6,11 +6,13 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 
 export function DependencyPicker({
-  task, allTasks, dependencies,
+  task, allTasks, dependencies, onPredecessorClick,
 }: {
   task: Task;
   allTasks: Task[];
   dependencies: Dependency[];
+  /** Optional handler when a predecessor row's title is clicked. */
+  onPredecessorClick?: (predecessor: Task) => void;
 }) {
   const qc = useQueryClient();
   const [adding, setAdding] = useState('');
@@ -50,9 +52,19 @@ export function DependencyPicker({
         {myPreds.map((d) => {
           const p = taskById.get(d.predecessorId);
           if (!p) return null;
+          const clickable = !!onPredecessorClick;
           return (
             <li key={d.predecessorId} className="flex items-center gap-2 border border-rule rounded px-2 py-1 text-[13px]">
-              <span className="flex-1 truncate">{p.title}</span>
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => onPredecessorClick!(p)}
+                  className="flex-1 truncate text-left hover:underline decoration-rule decoration-1 underline-offset-2"
+                  title={`Open "${p.title}"`}
+                >{p.title}</button>
+              ) : (
+                <span className="flex-1 truncate">{p.title}</span>
+              )}
               <span className="text-[11px] text-muted">{p.endDate}</span>
               <Button type="button" variant="ghost" onClick={() => remove.mutate(d.predecessorId)}>Remove</Button>
             </li>

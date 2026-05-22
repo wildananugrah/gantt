@@ -98,6 +98,10 @@ export function TicketPage() {
                 task={task}
                 allTasks={allTasks}
                 dependencies={task.dependencies}
+                onPredecessorClick={(p) => nav({
+                  to: '/tasks/$ticketNumber',
+                  params: { ticketNumber: p.ticketNumber },
+                })}
               />
               <FileUploader taskId={task.id} files={task.files} />
               <TaskComments taskId={task.id} />
