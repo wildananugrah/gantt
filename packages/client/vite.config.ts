@@ -20,6 +20,31 @@ export default defineConfig(({ mode }) => {
         '/api': API_PROXY_TARGET,
       },
     },
+    build: {
+      // Skip the per-chunk gzip-size reporting; saves several seconds on large bundles.
+      reportCompressedSize: false,
+      // Modern target — fewer transforms than the default 'modules' (~ES2015).
+      target: 'es2020',
+      // Raise the warning threshold so the build log isn't noisy with expected-large chunks.
+      chunkSizeWarningLimit: 1500,
+      sourcemap: false,
+      rollupOptions: {
+        output: {
+          // Stable vendor chunking → repeat deploys produce identical files for unchanged libs,
+          // so the browser cache keeps working across releases.
+          manualChunks: (id) => {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('@excalidraw')) return 'vendor-excalidraw';
+            if (id.includes('mermaid')) return 'vendor-mermaid';
+            if (id.includes('exceljs')) return 'vendor-exceljs';
+            if (id.includes('marked') || id.includes('dompurify')) return 'vendor-markdown';
+            if (id.includes('@tanstack')) return 'vendor-tanstack';
+            if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
+            return 'vendor';
+          },
+        },
+      },
+    },
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/test-setup.ts'],
