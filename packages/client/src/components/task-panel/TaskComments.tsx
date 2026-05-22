@@ -1,11 +1,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { TaskComment } from '@app/shared';
 import { api, ApiException } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useToast } from '../../lib/toast';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
+
+type Order = 'desc' | 'asc';
+const ORDER_KEY = 'taskCommentsOrder';
+
+function readInitialOrder(): Order {
+  try {
+    return localStorage.getItem(ORDER_KEY) === 'asc' ? 'asc' : 'desc';
+  } catch { return 'desc'; }
+}
 
 export function TaskComments({ taskId }: { taskId: string }) {
   const { user } = useAuth();
@@ -14,6 +23,11 @@ export function TaskComments({ taskId }: { taskId: string }) {
   const [draft, setDraft] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
+  const [order, setOrderState] = useState<Order>(readInitialOrder);
+  const setOrder = (o: Order) => {
+    setOrderState(o);
+    try { localStorage.setItem(ORDER_KEY, o); } catch { /* ignore */ }
+  };
 
   const commentsQ = useQuery({
     queryKey: ['comments', taskId],
@@ -46,15 +60,66 @@ export function TaskComments({ taskId }: { taskId: string }) {
   });
 
   const comments = commentsQ.data ?? [];
+  const sorted = useMemo(() => {
+    const arr = comments.slice();
+    arr.sort((a, b) => {
+      const cmp = a.createdAt.localeCompare(b.createdAt);
+      return order === 'desc' ? -cmp : cmp;
+    });
+    return arr;
+  }, [comments, order]);
 
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-[11px] uppercase tracking-wider text-muted">
-        Comments {comments.length > 0 && <span className="text-muted">({comments.length})</span>}
-      </h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-[11px] uppercase tracking-wider text-muted flex-1">
+          Comments {comments.length > 0 && <span className="text-muted">({comments.length})</span>}
+        </h3>
+        {comments.length > 1 && (
+          <div className="inline-flex border border-rule rounded overflow-hidden text-[10px]">
+            <button
+              type="button"
+              onClick={() => setOrder('desc')}
+              className={`h-6 px-2 ${order === 'desc' ? 'bg-ink text-paper' : 'bg-paper text-muted hover:bg-mist'}`}
+              title="Newest at the top"
+            >Newest</button>
+            <button
+              type="button"
+              onClick={() => setOrder('asc')}
+              className={`h-6 px-2 ${order === 'asc' ? 'bg-ink text-paper' : 'bg-paper text-muted hover:bg-mist'}`}
+              title="Oldest at the top"
+            >Oldest</button>
+          </div>
+        )}
+      </div>
 
-      <ul className="flex flex-col gap-2">
-        {comments.map((c) => {
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (draft.trim().length === 0) return;
+          add.mutate();
+        }}
+        className="flex flex-col gap-2"
+      >
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder="Write a comment…"
+          maxLength={5000}
+          className="min-h-[64px]"
+        />
+        <div className="flex items-center gap-2">
+          <Button type="submit" disabled={add.isPending || draft.trim().length === 0}>
+            {add.isPending ? 'Posting…' : 'Post'}
+          </Button>
+          {draft.length > 0 && (
+            <Button type="button" variant="ghost" onClick={() => setDraft('')}>Clear</Button>
+          )}
+        </div>
+      </form>
+
+      <ul className="flex flex-col gap-2 mt-1">
+        {sorted.map((c) => {
           const isMine = user && c.authorId === user.id;
           const canDelete = isMine || user?.role === 'admin';
           if (editingId === c.id) {
@@ -110,31 +175,6 @@ export function TaskComments({ taskId }: { taskId: string }) {
           <li className="text-[12px] text-muted">No comments yet.</li>
         )}
       </ul>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (draft.trim().length === 0) return;
-          add.mutate();
-        }}
-        className="flex flex-col gap-2 pt-1"
-      >
-        <Textarea
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Write a comment…"
-          maxLength={5000}
-          className="min-h-[64px]"
-        />
-        <div className="flex items-center gap-2">
-          <Button type="submit" disabled={add.isPending || draft.trim().length === 0}>
-            {add.isPending ? 'Posting…' : 'Post'}
-          </Button>
-          {draft.length > 0 && (
-            <Button type="button" variant="ghost" onClick={() => setDraft('')}>Clear</Button>
-          )}
-        </div>
-      </form>
     </section>
   );
 }
