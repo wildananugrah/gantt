@@ -1,11 +1,19 @@
 #!/bin/bash
 set -e
+set -o pipefail
 
 REPO_DIR="/root/repo/gantt-chart-app"
 DEPLOY_DIR="/var/www/html/gantt"
 LOCK_STAMP="$REPO_DIR/.deploy/last-bun-lock.sha"
 
 mkdir -p "$REPO_DIR/.deploy"
+
+# --- Signal handling ------------------------------------------------------
+# Make this script (and everything it spawns) its own process group so a
+# single kill on us tears down vite/bun/etc. cleanly. Without this, GitHub
+# Actions' cancel just kills the bash wrapper while the build keeps running.
+set -m
+trap 'echo ""; echo "[!] Caught signal — terminating deploy and all children..."; kill -- -$$ 2>/dev/null || true; exit 130' INT TERM
 
 step() {
   local label="$1"; shift
@@ -22,9 +30,9 @@ START_HUMAN=$(date '+%Y-%m-%d %H:%M:%S %Z')
 
 echo "============================================"
 echo "Deploy started at: $START_HUMAN"
+echo "PID: $$ (kill -TERM -$$ to cancel)"
 echo "============================================"
 
-# Install only when bun.lock changed (saves 30-60s on most deploys).
 install_deps() {
   local current
   current=$(sha256sum "$REPO_DIR/bun.lock" | awk '{print $1}')

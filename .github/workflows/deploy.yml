@@ -6,17 +6,29 @@ on:
       - main
   workflow_dispatch:
 
+# Cancel an in-progress deploy when a newer commit is pushed to main.
+# (Prevents the "queue piles up while a slow build runs" scenario.)
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: self-hosted
-    timeout-minutes: 30
+    # Hard wall clock for the entire job — if a build genuinely hangs, abort.
+    timeout-minutes: 15
 
     steps:
       - name: Pull latest code
+        timeout-minutes: 2
         run: |
           cd /root/repo/gantt-chart-app
           git fetch --prune origin
           git reset --hard origin/main
 
+      # `setsid` puts the script in its own session so SIGTERM hits the whole
+      # process tree — vite, bun, everything — not just the bash wrapper.
       - name: Run deploy script
-        run: bash /root/repo/gantt-chart-app/deploy-all.sh
+        timeout-minutes: 12
+        run: |
+          setsid bash /root/repo/gantt-chart-app/deploy-all.sh
