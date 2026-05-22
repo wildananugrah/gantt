@@ -4,6 +4,7 @@ import type { TaskFile } from '@app/shared';
 import { api, ApiException } from '../../lib/api';
 import { useToast } from '../../lib/toast';
 import { Button } from '../ui/Button';
+import { MarkdownPreview, isMarkdownFile } from './MarkdownPreview';
 
 /**
  * POSTs a multipart/form-data upload to our own API (NOT to S3 directly), reporting progress.
@@ -48,6 +49,7 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
   const [queueLength, setQueueLength] = useState(0);
   const [queueIndex, setQueueIndex] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [previewFile, setPreviewFile] = useState<TaskFile | null>(null);
 
   async function uploadOne(file: File): Promise<void> {
     setProgress({ filename: file.name, pct: 0 });
@@ -142,17 +144,29 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
     >
       <h3 className="text-[11px] uppercase tracking-wider text-muted">Files</h3>
       <ul className="flex flex-col gap-1">
-        {files.map((f) => (
-          <li key={f.id} className="flex items-center gap-2 border border-rule rounded px-2 py-1 text-[13px]">
-            <a
-              href={`/api/files/${f.id}/download`}
-              className="flex-1 truncate hover:underline"
-              target="_blank" rel="noreferrer"
-            >{f.filename}</a>
-            <span className="text-[11px] text-muted">{Math.round(f.sizeBytes / 1024)} KB</span>
-            <Button type="button" variant="ghost" onClick={() => del.mutate(f.id)}>Delete</Button>
-          </li>
-        ))}
+        {files.map((f) => {
+          const isMd = isMarkdownFile(f);
+          return (
+            <li key={f.id} className="flex items-center gap-2 border border-rule rounded px-2 py-1 text-[13px]">
+              {isMd ? (
+                <button
+                  type="button"
+                  onClick={() => setPreviewFile(f)}
+                  className="flex-1 truncate text-left hover:underline"
+                  title="Preview markdown"
+                >{f.filename}</button>
+              ) : (
+                <a
+                  href={`/api/files/${f.id}/download`}
+                  className="flex-1 truncate hover:underline"
+                  target="_blank" rel="noreferrer"
+                >{f.filename}</a>
+              )}
+              <span className="text-[11px] text-muted">{Math.round(f.sizeBytes / 1024)} KB</span>
+              <Button type="button" variant="ghost" onClick={() => del.mutate(f.id)}>Delete</Button>
+            </li>
+          );
+        })}
         {files.length === 0 && <li className="text-[12px] text-muted">— none —</li>}
       </ul>
 
@@ -185,6 +199,13 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
           e.target.value = '';
         }}
       />
+      {previewFile && (
+        <MarkdownPreview
+          open={!!previewFile}
+          onClose={() => setPreviewFile(null)}
+          file={previewFile}
+        />
+      )}
     </section>
   );
 }

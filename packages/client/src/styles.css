@@ -39,3 +39,56 @@ body { background: rgb(var(--color-paper)); color: rgb(var(--color-ink)); }
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Rendered-markdown styles. Theme-aware via the same CSS vars. */
+.md-content {
+  color: rgb(var(--color-ink));
+  font-size: 14px;
+  line-height: 1.55;
+  word-wrap: break-word;
+}
+.md-content > * + * { margin-top: 0.8em; }
+.md-content h1 { font-size: 22px; font-weight: 700; margin-top: 1.2em; }
+.md-content h2 { font-size: 18px; font-weight: 700; margin-top: 1.2em; }
+.md-content h3 { font-size: 16px; font-weight: 600; margin-top: 1em; }
+.md-content h4 { font-size: 14px; font-weight: 600; margin-top: 1em; }
+.md-content h1, .md-content h2 { border-bottom: 1px solid rgb(var(--color-rule)); padding-bottom: 0.3em; }
+.md-content a { color: rgb(var(--color-focus)); text-decoration: underline; text-underline-offset: 2px; }
+.md-content code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88em;
+  background: rgb(var(--color-mist));
+  border: 1px solid rgb(var(--color-rule));
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.md-content pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.5;
+  background: rgb(var(--color-mist));
+  border: 1px solid rgb(var(--color-rule));
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+.md-content pre code { background: transparent; border: 0; padding: 0; font-size: inherit; }
+.md-content blockquote {
+  border-left: 3px solid rgb(var(--color-rule));
+  padding-left: 12px;
+  color: rgb(var(--color-muted));
+}
+.md-content ul, .md-content ol { padding-left: 1.6em; }
+.md-content ul { list-style: disc; }
+.md-content ol { list-style: decimal; }
+.md-content li + li { margin-top: 0.25em; }
+.md-content table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.md-content th, .md-content td {
+  border: 1px solid rgb(var(--color-rule));
+  padding: 6px 10px;
+  text-align: left;
+}
+.md-content th { background: rgb(var(--color-mist)); font-weight: 600; }
+.md-content hr { border: 0; border-top: 1px solid rgb(var(--color-rule)); margin: 1.5em 0; }
+.md-content img { max-width: 100%; height: auto; }
+.md-content input[type="checkbox"] { margin-right: 0.4em; transform: translateY(1px); }
