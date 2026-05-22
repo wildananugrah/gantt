@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import type { Task, TaskFile, Dependency, User } from '@app/shared';
@@ -6,6 +7,7 @@ import { Button } from '../ui/Button';
 import { TaskForm } from './TaskForm';
 import { DependencyPicker } from './DependencyPicker';
 import { FileUploader } from './FileUploader';
+import { TaskExcalidraw } from './TaskExcalidraw';
 
 type Detail = Task & { files: TaskFile[]; dependencies: Dependency[] };
 
@@ -15,6 +17,7 @@ export function TaskDetailPanel({ taskId, projectMembers, allTasks }: {
   allTasks: Task[];
 }) {
   const nav = useNavigate();
+  const [drawing, setDrawing] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['task', taskId],
     queryFn: () => api.get<Detail>(`/tasks/${taskId}`),
@@ -62,10 +65,21 @@ export function TaskDetailPanel({ taskId, projectMembers, allTasks }: {
               allTasks={allTasks}
               dependencies={data.dependencies}
             />
+            <section className="flex flex-col gap-2">
+              <h3 className="text-[11px] uppercase tracking-wider text-muted">Whiteboard</h3>
+              <Button type="button" variant="ghost" onClick={() => setDrawing(true)}>Open whiteboard</Button>
+            </section>
             <FileUploader taskId={data.id} files={data.files} />
           </>
         )}
       </div>
+      {drawing && data && (
+        <TaskExcalidraw
+          taskId={data.id}
+          taskTitle={data.title}
+          onClose={() => setDrawing(false)}
+        />
+      )}
     </aside>
   );
 }

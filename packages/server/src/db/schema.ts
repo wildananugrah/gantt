@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, date, integer, bigint, primaryKey, index, check } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, date, integer, bigint, jsonb, primaryKey, index, check } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -68,3 +68,11 @@ export const taskFiles = pgTable('task_files', {
 }, (t) => ({
   byTask: index('files_task_idx').on(t.taskId),
 }));
+
+
+export const taskExcalidraw = pgTable('task_excalidraw', {
+  taskId: uuid('task_id').primaryKey().references(() => tasks.id, { onDelete: 'cascade' }),
+  data: jsonb('data').notNull(),
+  updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
