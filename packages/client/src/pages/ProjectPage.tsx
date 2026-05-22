@@ -13,6 +13,17 @@ import { Button } from '../components/ui/Button';
 import { ErrorBanner } from '../components/ErrorBanner';
 import { TaskSearch } from '../components/project/TaskSearch';
 import { EditProjectDialog } from '../components/project/EditProjectDialog';
+import { TaskListView } from '../components/task-list/TaskListView';
+
+type ViewMode = 'gantt' | 'list';
+const VIEW_STORAGE_KEY = 'projectViewMode';
+
+function readInitialView(): ViewMode {
+  try {
+    const stored = localStorage.getItem(VIEW_STORAGE_KEY);
+    return stored === 'list' ? 'list' : 'gantt';
+  } catch { return 'gantt'; }
+}
 
 export function ProjectPage() {
   const { user, loading } = useAuth();
@@ -20,6 +31,11 @@ export function ProjectPage() {
   const params = useParams({ strict: false }) as { id: string };
   const search = useSearch({ strict: false }) as { task?: string };
   const [zoom, setZoom] = useState<Zoom>('week');
+  const [view, setViewState] = useState<ViewMode>(readInitialView);
+  const setView = (v: ViewMode) => {
+    setViewState(v);
+    try { localStorage.setItem(VIEW_STORAGE_KEY, v); } catch { /* ignore */ }
+  };
   const [newOpen, setNewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const ganttRef = useRef<GanttControl>(null);
@@ -86,19 +102,33 @@ export function ProjectPage() {
             disabled={!tasksQ.data || tasksQ.data.tasks.length === 0}
             className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist disabled:opacity-50 disabled:cursor-not-allowed"
           >Export</button>
-          <button
-            onClick={() => ganttRef.current?.scrollToToday()}
-            className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist"
-          >Today</button>
           <div className="inline-flex border border-rule rounded overflow-hidden">
-            {(['day','week','month'] as Zoom[]).map((z) => (
+            {(['gantt', 'list'] as ViewMode[]).map((v) => (
               <button
-                key={z}
-                onClick={() => setZoom(z)}
-                className={`h-7 px-2.5 text-[11px] capitalize ${zoom === z ? 'bg-ink text-paper' : 'bg-paper hover:bg-mist'}`}
-              >{z}</button>
+                key={v}
+                onClick={() => setView(v)}
+                className={`h-7 px-2.5 text-[11px] capitalize ${view === v ? 'bg-ink text-paper' : 'bg-paper hover:bg-mist'}`}
+                title={v === 'gantt' ? 'Gantt chart view' : 'Task list view'}
+              >{v}</button>
             ))}
           </div>
+          {view === 'gantt' && (
+            <>
+              <button
+                onClick={() => ganttRef.current?.scrollToToday()}
+                className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist"
+              >Today</button>
+              <div className="inline-flex border border-rule rounded overflow-hidden">
+                {(['day','week','month'] as Zoom[]).map((z) => (
+                  <button
+                    key={z}
+                    onClick={() => setZoom(z)}
+                    className={`h-7 px-2.5 text-[11px] capitalize ${zoom === z ? 'bg-ink text-paper' : 'bg-paper hover:bg-mist'}`}
+                  >{z}</button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
       <main className="flex-1 overflow-hidden relative">
@@ -114,14 +144,21 @@ export function ProjectPage() {
           </div>
         ) : (
           <>
-            <GanttChart
-              ref={ganttRef}
-              tasks={tasksQ.data.tasks}
-              dependencies={tasksQ.data.dependencies}
-              members={projectQ.data.members}
-              zoom={zoom}
-              projectId={params.id}
-            />
+            {view === 'gantt' ? (
+              <GanttChart
+                ref={ganttRef}
+                tasks={tasksQ.data.tasks}
+                dependencies={tasksQ.data.dependencies}
+                members={projectQ.data.members}
+                zoom={zoom}
+                projectId={params.id}
+              />
+            ) : (
+              <TaskListView
+                tasks={tasksQ.data.tasks}
+                members={projectQ.data.members}
+              />
+            )}
             {search.task && (
               <TaskDetailPanel
                 key={search.task}
