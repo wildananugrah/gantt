@@ -4,3 +4,4 @@ export * from './task';
 export * from './file';
 export * from './auth';
 export * from './errors';
+export * from './comment';

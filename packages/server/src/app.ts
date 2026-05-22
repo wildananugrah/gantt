@@ -10,6 +10,7 @@ import { projectTasksRoutes, taskRoutes, ticketRoutes } from './routes/tasks';
 import { dependencyRoutes } from './routes/dependencies';
 import { taskFilesRoutes, fileRoutes } from './routes/files';
 import { excalidrawRoutes } from './routes/excalidraw';
+import { taskCommentsRoutes, commentRoutes } from './routes/comments';
 
 // Port the HTTP server listens on. Sourced from .env (PORT=…), default 3000.
 export const PORT: number = env.PORT;
@@ -43,8 +44,10 @@ export function createApp() {
   app.route('/api/tasks', dependencyRoutes);
   app.route('/api/tasks', taskFilesRoutes);
   app.route('/api/tasks', excalidrawRoutes);
+  app.route('/api/tasks', taskCommentsRoutes);
   app.route('/api/tickets', ticketRoutes);
   app.route('/api/files', fileRoutes);
+  app.route('/api/comments', commentRoutes);
 
   if (env.NODE_ENV === 'production') {
     app.use('/*', serveStatic({ root: '../client/dist' }));

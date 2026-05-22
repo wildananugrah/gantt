@@ -76,3 +76,14 @@ export const taskExcalidraw = pgTable('task_excalidraw', {
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const taskComments = pgTable('task_comments', {
+  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+  body: text('body').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  byTask: index('comments_task_idx').on(t.taskId, t.createdAt),
+}));

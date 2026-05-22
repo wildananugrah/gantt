@@ -8,6 +8,7 @@ import { AppTopBar } from '../components/AppTopBar';
 import { TaskForm } from '../components/task-panel/TaskForm';
 import { DependencyPicker } from '../components/task-panel/DependencyPicker';
 import { FileUploader } from '../components/task-panel/FileUploader';
+import { TaskComments } from '../components/task-panel/TaskComments';
 
 type Detail = Task & { files: TaskFile[]; dependencies: Dependency[] };
 
@@ -99,6 +100,7 @@ export function TicketPage() {
                 dependencies={task.dependencies}
               />
               <FileUploader taskId={task.id} files={task.files} />
+              <TaskComments taskId={task.id} />
             </>
           )}
         </div>

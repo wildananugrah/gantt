@@ -8,6 +8,7 @@ import { TaskForm } from './TaskForm';
 import { DependencyPicker } from './DependencyPicker';
 import { FileUploader } from './FileUploader';
 import { TaskExcalidraw } from './TaskExcalidraw';
+import { TaskComments } from './TaskComments';
 
 type Detail = Task & { files: TaskFile[]; dependencies: Dependency[] };
 
@@ -70,6 +71,7 @@ export function TaskDetailPanel({ taskId, projectMembers, allTasks }: {
               <Button type="button" variant="ghost" onClick={() => setDrawing(true)}>Open whiteboard</Button>
             </section>
             <FileUploader taskId={data.id} files={data.files} />
+            <TaskComments taskId={data.id} />
           </>
         )}
       </div>
