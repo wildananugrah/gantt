@@ -30,17 +30,18 @@ export default defineConfig(({ mode }) => {
       sourcemap: false,
       rollupOptions: {
         output: {
-          // Stable vendor chunking → repeat deploys produce identical files for unchanged libs,
-          // so the browser cache keeps working across releases.
+          // Only split LAZY-LOADED heavy libs into stable named chunks.
+          // Eager deps (React, TanStack, etc.) are left to Vite's default
+          // chunking — manually splitting them caused a load-order bug where
+          // a consumer chunk ran before its React chunk had executed,
+          // producing `Ro.useState is undefined` on first paint.
           manualChunks: (id) => {
             if (!id.includes('node_modules')) return undefined;
             if (id.includes('@excalidraw')) return 'vendor-excalidraw';
             if (id.includes('mermaid')) return 'vendor-mermaid';
             if (id.includes('exceljs')) return 'vendor-exceljs';
             if (id.includes('marked') || id.includes('dompurify')) return 'vendor-markdown';
-            if (id.includes('@tanstack')) return 'vendor-tanstack';
-            if (id.includes('react') || id.includes('scheduler')) return 'vendor-react';
-            return 'vendor';
+            return undefined;
           },
         },
       },
