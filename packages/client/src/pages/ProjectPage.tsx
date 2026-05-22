@@ -14,6 +14,7 @@ import { ErrorBanner } from '../components/ErrorBanner';
 import { TaskSearch } from '../components/project/TaskSearch';
 import { EditProjectDialog } from '../components/project/EditProjectDialog';
 import { TaskListView } from '../components/task-list/TaskListView';
+import { useIsMobile } from '../lib/responsive';
 
 type ViewMode = 'gantt' | 'list';
 const VIEW_STORAGE_KEY = 'projectViewMode';
@@ -39,6 +40,9 @@ export function ProjectPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const ganttRef = useRef<GanttControl>(null);
+  const isMobile = useIsMobile();
+  // On mobile the Gantt chart isn't usable; force list view regardless of the user's saved preference.
+  const effectiveView: ViewMode = isMobile ? 'list' : view;
 
   useEffect(() => { if (!loading && !user) nav({ to: '/login' }); }, [loading, user, nav]);
 
@@ -66,23 +70,29 @@ export function ProjectPage() {
           onRetry={() => { tasksQ.refetch(); projectQ.refetch(); }}
         />
       )}
-      <div className="h-10 border-b border-rule bg-paper flex items-center px-4 gap-3">
-        <h1 className="text-[14px] font-semibold">{projectQ.data?.name ?? '…'}</h1>
-        <span className="text-[11px] text-muted">
+      <div className="min-h-10 border-b border-rule bg-paper flex flex-wrap items-center px-3 sm:px-4 py-1.5 gap-x-3 gap-y-1.5">
+        <h1 className="text-[14px] font-semibold truncate max-w-[60vw] sm:max-w-none">{projectQ.data?.name ?? '…'}</h1>
+        <span className="hidden sm:inline text-[11px] text-muted">
           {projectQ.data ? `${projectQ.data.members.length} member${projectQ.data.members.length === 1 ? '' : 's'}` : ''}
         </span>
         {user.role === 'admin' && projectQ.data && (
           <button
             onClick={() => setEditOpen(true)}
-            className="text-[12px] text-muted hover:text-ink"
+            className="hidden sm:inline text-[12px] text-muted hover:text-ink"
             title="Edit project name & description"
           >Edit</button>
         )}
         {tasksQ.data && tasksQ.data.tasks.length > 0 && (
-          <TaskSearch tasks={tasksQ.data.tasks} projectId={params.id} />
+          <div className="hidden sm:block">
+            <TaskSearch tasks={tasksQ.data.tasks} projectId={params.id} />
+          </div>
         )}
         <div className="ml-auto flex items-center gap-2">
-          <Link to="/projects/$id/members" params={{ id: params.id }} className="text-[12px] text-muted hover:text-ink">Members</Link>
+          <Link
+            to="/projects/$id/members"
+            params={{ id: params.id }}
+            className="hidden sm:inline text-[12px] text-muted hover:text-ink"
+          >Members</Link>
           <Button onClick={() => setNewOpen(true)}>+ Task</Button>
           <button
             onClick={async () => {
@@ -100,19 +110,21 @@ export function ProjectPage() {
               }
             }}
             disabled={!tasksQ.data || tasksQ.data.tasks.length === 0}
-            className="h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist disabled:opacity-50 disabled:cursor-not-allowed"
+            className="hidden sm:inline-block h-7 px-2.5 text-[11px] border border-rule rounded bg-paper hover:bg-mist disabled:opacity-50 disabled:cursor-not-allowed"
           >Export</button>
-          <div className="inline-flex border border-rule rounded overflow-hidden">
-            {(['gantt', 'list'] as ViewMode[]).map((v) => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`h-7 px-2.5 text-[11px] capitalize ${view === v ? 'bg-ink text-paper' : 'bg-paper hover:bg-mist'}`}
-                title={v === 'gantt' ? 'Gantt chart view' : 'Task list view'}
-              >{v}</button>
-            ))}
-          </div>
-          {view === 'gantt' && (
+          {!isMobile && (
+            <div className="inline-flex border border-rule rounded overflow-hidden">
+              {(['gantt', 'list'] as ViewMode[]).map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`h-7 px-2.5 text-[11px] capitalize ${view === v ? 'bg-ink text-paper' : 'bg-paper hover:bg-mist'}`}
+                  title={v === 'gantt' ? 'Gantt chart view' : 'Task list view'}
+                >{v}</button>
+              ))}
+            </div>
+          )}
+          {effectiveView === 'gantt' && (
             <>
               <button
                 onClick={() => ganttRef.current?.scrollToToday()}
@@ -144,7 +156,7 @@ export function ProjectPage() {
           </div>
         ) : (
           <>
-            {view === 'gantt' ? (
+            {effectiveView === 'gantt' ? (
               <GanttChart
                 ref={ganttRef}
                 tasks={tasksQ.data.tasks}
