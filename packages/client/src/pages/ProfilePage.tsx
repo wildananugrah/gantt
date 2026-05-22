@@ -7,6 +7,7 @@ import { useAuth } from '../lib/auth';
 import { AppTopBar } from '../components/AppTopBar';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { PasswordInput } from '../components/ui/PasswordInput';
 
 export function ProfilePage() {
   const { user, loading } = useAuth();
@@ -112,13 +113,13 @@ function PasswordForm() {
     <form onSubmit={submit} className="flex flex-col gap-3 border border-rule rounded-md p-5">
       <h2 className="text-[13px] uppercase tracking-wider text-muted">Change password</h2>
       <Field label="Current password">
-        <Input type="password" autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrent(e.target.value)} required />
+        <PasswordInput autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrent(e.target.value)} required />
       </Field>
       <Field label="New password (min 8)">
-        <Input type="password" autoComplete="new-password" value={newPassword} onChange={(e) => setNew(e.target.value)} required minLength={8} />
+        <PasswordInput autoComplete="new-password" value={newPassword} onChange={(e) => setNew(e.target.value)} required minLength={8} />
       </Field>
       <Field label="Confirm new password">
-        <Input type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} />
+        <PasswordInput autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={8} />
       </Field>
       {okMsg && <p className="text-[12px] text-emerald-700">{okMsg}</p>}
       {err && <p className="text-[12px] text-red-600">{err}</p>}

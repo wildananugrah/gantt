@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { PasswordInput } from '../components/ui/PasswordInput';
 
 export function RegisterPage() {
   const { register, user } = useAuth();
@@ -37,8 +38,8 @@ export function RegisterPage() {
         <h1 className="text-lg font-semibold">Create an account</h1>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="full name" autoComplete="name" required minLength={1} maxLength={120} />
         <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" type="email" autoComplete="email" required />
-        <Input value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password (min 8)" type="password" autoComplete="new-password" required minLength={8} />
-        <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="confirm password" type="password" autoComplete="new-password" required minLength={8} />
+        <PasswordInput value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password (min 8)" autoComplete="new-password" required minLength={8} />
+        <PasswordInput value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="confirm password" autoComplete="new-password" required minLength={8} />
         {err && <p className="text-[12px] text-red-600">{err}</p>}
         <Button disabled={busy} type="submit">{busy ? 'Creating account…' : 'Create account'}</Button>
         <p className="text-[12px] text-muted text-center mt-1">

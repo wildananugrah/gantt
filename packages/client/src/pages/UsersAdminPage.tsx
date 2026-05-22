@@ -7,6 +7,7 @@ import { useAuth } from '../lib/auth';
 import { AppTopBar } from '../components/AppTopBar';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { PasswordInput } from '../components/ui/PasswordInput';
 import { Select } from '../components/ui/Select';
 import { Dialog } from '../components/ui/Dialog';
 
@@ -96,7 +97,7 @@ function NewUserDialog({ open, onClose }: { open: boolean; onClose: () => void }
       >
         <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
         <Input placeholder="email@example.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input placeholder="Password (min 8)" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+        <PasswordInput placeholder="Password (min 8)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
         <Select value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'member')}>
           <option value="member">Member</option>
           <option value="admin">Admin</option>

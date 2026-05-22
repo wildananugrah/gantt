@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../lib/auth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { PasswordInput } from '../components/ui/PasswordInput';
 
 export function LoginPage() {
   const { login, user } = useAuth();
@@ -31,7 +32,7 @@ export function LoginPage() {
       >
         <h1 className="text-lg font-semibold">Sign in</h1>
         <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email" autoComplete="email" />
-        <Input value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password" type="password" autoComplete="current-password" />
+        <PasswordInput value={pw} onChange={(e) => setPw(e.target.value)} placeholder="password" autoComplete="current-password" />
         {err && <p className="text-[12px] text-red-600">{err}</p>}
         <Button disabled={busy} type="submit">{busy ? 'Signing in…' : 'Sign in'}</Button>
         <p className="text-[12px] text-muted text-center mt-1">
