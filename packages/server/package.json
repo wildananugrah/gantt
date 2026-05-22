@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "bun --env-file=../../.env run src/db/migrate.ts",
     "db:studio": "drizzle-kit studio",
-    "reconcile-orphans": "bun --env-file=../../.env run src/scripts/reconcile-orphans.ts"
+    "reconcile-orphans": "bun --env-file=../../.env run src/scripts/reconcile-orphans.ts",
+    "set-user-role": "bun --env-file=../../.env run src/scripts/set-user-role.ts"
   },
   "dependencies": {
     "@app/shared": "workspace:*",
