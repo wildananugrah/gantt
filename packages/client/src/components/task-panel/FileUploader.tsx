@@ -5,6 +5,7 @@ import { api, ApiException } from '../../lib/api';
 import { useToast } from '../../lib/toast';
 import { Button } from '../ui/Button';
 import { MarkdownPreview, isMarkdownFile } from './MarkdownPreview';
+import { MediaPreview, isMediaFile } from './MediaPreview';
 
 /**
  * POSTs a multipart/form-data upload to our own API (NOT to S3 directly), reporting progress.
@@ -145,15 +146,18 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
       <h3 className="text-[11px] uppercase tracking-wider text-muted">Files</h3>
       <ul className="flex flex-col gap-1">
         {files.map((f) => {
-          const isMd = isMarkdownFile(f);
+          const previewable = isMarkdownFile(f) || isMediaFile(f);
+          const previewTitle = isMarkdownFile(f)
+            ? 'Preview markdown'
+            : isMediaFile(f) ? 'Preview' : '';
           return (
             <li key={f.id} className="flex items-center gap-2 border border-rule rounded px-2 py-1 text-[13px]">
-              {isMd ? (
+              {previewable ? (
                 <button
                   type="button"
                   onClick={() => setPreviewFile(f)}
                   className="flex-1 truncate text-left hover:underline"
-                  title="Preview markdown"
+                  title={previewTitle}
                 >{f.filename}</button>
               ) : (
                 <a
@@ -199,9 +203,16 @@ export function FileUploader({ taskId, files }: { taskId: string; files: TaskFil
           e.target.value = '';
         }}
       />
-      {previewFile && (
+      {previewFile && isMarkdownFile(previewFile) && (
         <MarkdownPreview
-          open={!!previewFile}
+          open={true}
+          onClose={() => setPreviewFile(null)}
+          file={previewFile}
+        />
+      )}
+      {previewFile && isMediaFile(previewFile) && (
+        <MediaPreview
+          open={true}
           onClose={() => setPreviewFile(null)}
           file={previewFile}
         />
