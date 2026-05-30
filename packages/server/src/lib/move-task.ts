@@ -8,9 +8,16 @@ export type ValidateMoveTaskInput = {
   picInDestination: boolean;
 };
 
+export type MoveErrorCode =
+  | 'VALIDATION_ERROR'
+  | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'HAS_DEPENDENCIES'
+  | 'PIC_NOT_IN_DESTINATION';
+
 export type ValidateMoveTaskResult =
   | { ok: true }
-  | { ok: false; status: number; code: string; message: string };
+  | { ok: false; status: 400 | 403 | 404 | 409; code: MoveErrorCode; message: string };
 
 export function validateMoveTask(input: ValidateMoveTaskInput): ValidateMoveTaskResult {
   if (input.targetProjectId === input.task.projectId) {
