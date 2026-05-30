@@ -117,53 +117,61 @@ export const taskRoutes = new Hono<AppContext>()
     const body = await parseBody(c, MoveTaskInput);
     const me = c.get('user');
 
-    const [existing] = await db.select().from(tasks).where(eq(tasks.id, id));
-    if (!existing) throw new HttpError(404, 'NOT_FOUND', 'task not found');
+    const updated = await db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(tasks).where(eq(tasks.id, id));
+      if (!existing) throw new HttpError(404, 'NOT_FOUND', 'task not found');
 
-    // Source-side access: same rule as PATCH.
-    if (me.role !== 'admin') await assertProjectMember(existing.projectId, me.id);
+      // Source-side requester membership — inlined so it shares the transaction.
+      // Same query/error as assertProjectMember (lib/membership.ts).
+      if (me.role !== 'admin') {
+        const [src] = await tx.select({ uid: projectMembers.userId })
+          .from(projectMembers)
+          .where(and(
+            eq(projectMembers.projectId, existing.projectId),
+            eq(projectMembers.userId, me.id),
+          )).limit(1);
+        if (!src) throw new HttpError(409, 'CONFLICT', 'PIC is not a project member');
+      }
 
-    // Gather inputs for the validator.
-    const [destProject] = await db.select({ id: projects.id })
-      .from(projects).where(eq(projects.id, body.targetProjectId)).limit(1);
+      const [destProject] = await tx.select({ id: projects.id })
+        .from(projects).where(eq(projects.id, body.targetProjectId)).limit(1);
 
-    const [requesterInDest] = await db.select({ uid: projectMembers.userId })
-      .from(projectMembers)
-      .where(and(
-        eq(projectMembers.projectId, body.targetProjectId),
-        eq(projectMembers.userId, me.id),
-      )).limit(1);
-
-    const depsRows = await db.select({ p: taskDependencies.predecessorId })
-      .from(taskDependencies)
-      .where(or(
-        eq(taskDependencies.predecessorId, id),
-        eq(taskDependencies.successorId, id),
-      )).limit(1);
-
-    let picInDest = true;
-    if (existing.picUserId) {
-      const [picRow] = await db.select({ uid: projectMembers.userId })
+      const [requesterInDest] = await tx.select({ uid: projectMembers.userId })
         .from(projectMembers)
         .where(and(
           eq(projectMembers.projectId, body.targetProjectId),
-          eq(projectMembers.userId, existing.picUserId),
+          eq(projectMembers.userId, me.id),
         )).limit(1);
-      picInDest = !!picRow;
-    }
 
-    const decision = validateMoveTask({
-      task: { id: existing.id, projectId: existing.projectId, picUserId: existing.picUserId },
-      targetProjectId: body.targetProjectId,
-      requester: { id: me.id, role: me.role },
-      destinationExists: !!destProject,
-      requesterInDestination: !!requesterInDest,
-      dependencyCount: depsRows.length,
-      picInDestination: picInDest,
-    });
-    if (!decision.ok) throw new HttpError(decision.status, decision.code, decision.message);
+      const depsRows = await tx.select({ p: taskDependencies.predecessorId })
+        .from(taskDependencies)
+        .where(or(
+          eq(taskDependencies.predecessorId, id),
+          eq(taskDependencies.successorId, id),
+        )).limit(1);
 
-    const updated = await db.transaction(async (tx) => {
+      let picInDest = true;
+      if (existing.picUserId) {
+        const [picRow] = await tx.select({ uid: projectMembers.userId })
+          .from(projectMembers)
+          .where(and(
+            eq(projectMembers.projectId, body.targetProjectId),
+            eq(projectMembers.userId, existing.picUserId),
+          )).limit(1);
+        picInDest = !!picRow;
+      }
+
+      const decision = validateMoveTask({
+        task: { id: existing.id, projectId: existing.projectId, picUserId: existing.picUserId },
+        targetProjectId: body.targetProjectId,
+        requester: { id: me.id, role: me.role },
+        destinationExists: !!destProject,
+        requesterInDestination: !!requesterInDest,
+        dependencyCount: depsRows.length,
+        picInDestination: picInDest,
+      });
+      if (!decision.ok) throw new HttpError(decision.status, decision.code, decision.message);
+
       const [maxRow] = await tx
         .select({ m: sql<number | null>`max(${tasks.sortOrder})` })
         .from(tasks)
