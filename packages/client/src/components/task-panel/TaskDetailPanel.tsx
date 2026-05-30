@@ -9,6 +9,7 @@ import { DependencyPicker } from './DependencyPicker';
 import { FileUploader } from './FileUploader';
 import { TaskExcalidraw } from './TaskExcalidraw';
 import { TaskComments } from './TaskComments';
+import { MoveTaskSection } from './MoveTaskSection';
 
 type Detail = Task & { files: TaskFile[]; dependencies: Dependency[] };
 
@@ -60,6 +61,10 @@ export function TaskDetailPanel({ taskId, projectMembers, allTasks }: {
               task={data}
               projectMembers={projectMembers}
               onDeleted={() => nav({ to: '.', search: {}, replace: true })}
+            />
+            <MoveTaskSection
+              task={data}
+              dependencyCount={data.dependencies.length}
             />
             <DependencyPicker
               task={data}
