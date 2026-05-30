@@ -54,3 +54,8 @@ export const UpdateTaskInput = z.object({
   { path: ['endDate'], message: 'endDate must be on or after startDate' },
 ).refine((v) => Object.keys(v).length > 0, { message: 'no fields to update' });
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInput>;
+
+export const MoveTaskInput = z.object({
+  targetProjectId: z.string().uuid(),
+});
+export type MoveTaskInput = z.infer<typeof MoveTaskInput>;
