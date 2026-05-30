@@ -44,8 +44,10 @@ export function MoveTaskSection({
       switch (err.code) {
         case 'HAS_DEPENDENCIES':
           setError(
-            `This task has ${dependencyCount} dependenc${dependencyCount === 1 ? 'y' : 'ies'}. ` +
-            `Remove them in Depends on before moving.`,
+            dependencyCount > 0
+              ? `This task has ${dependencyCount} dependenc${dependencyCount === 1 ? 'y' : 'ies'}. ` +
+                `Remove them in Depends on before moving.`
+              : `This task is a prerequisite for another task. Remove that dependency before moving.`,
           );
           break;
         case 'PIC_NOT_IN_DESTINATION':
@@ -68,6 +70,8 @@ export function MoveTaskSection({
       <h3 className="text-[11px] uppercase tracking-wider text-muted">Move to project</h3>
       {projectsQ.isLoading ? (
         <div className="text-muted text-[13px]">Loading projects…</div>
+      ) : projectsQ.isError ? (
+        <div className="text-[12px] text-red-600 leading-snug">Could not load projects. Refresh and try again.</div>
       ) : choices.length === 0 ? (
         <div className="text-muted text-[13px]">No other projects available.</div>
       ) : (

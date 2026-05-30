@@ -130,7 +130,7 @@ export const taskRoutes = new Hono<AppContext>()
             eq(projectMembers.projectId, existing.projectId),
             eq(projectMembers.userId, me.id),
           )).limit(1);
-        if (!src) throw new HttpError(409, 'CONFLICT', 'PIC is not a project member');
+        if (!src) throw new HttpError(409, 'CONFLICT', 'you are no longer a member of this project');
       }
 
       const [destProject] = await tx.select({ id: projects.id })
